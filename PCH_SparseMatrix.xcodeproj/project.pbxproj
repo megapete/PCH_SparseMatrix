@@ -10,6 +10,9 @@
 		D3137458208268E5006AC4A6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3137457208268E5006AC4A6 /* AppDelegate.swift */; };
 		D313745A208268E8006AC4A6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D3137459208268E8006AC4A6 /* Assets.xcassets */; };
 		D313745D208268E8006AC4A6 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = D313745B208268E8006AC4A6 /* MainMenu.xib */; };
+		D313746620826902006AC4A6 /* SparseMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = D313746520826902006AC4A6 /* SparseMatrix.swift */; };
+		D313746920826971006AC4A6 /* GlobalDefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = D313746720826971006AC4A6 /* GlobalDefs.swift */; };
+		D313746A20826971006AC4A6 /* PCH_Defs.swift in Sources */ = {isa = PBXBuildFile; fileRef = D313746820826971006AC4A6 /* PCH_Defs.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,6 +22,9 @@
 		D313745C208268E8006AC4A6 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		D313745E208268E8006AC4A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D313745F208268E8006AC4A6 /* PCH_SparseMatrix.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PCH_SparseMatrix.entitlements; sourceTree = "<group>"; };
+		D313746520826902006AC4A6 /* SparseMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparseMatrix.swift; sourceTree = "<group>"; };
+		D313746720826971006AC4A6 /* GlobalDefs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GlobalDefs.swift; path = ../../../../Dropbox/MyProjects/GlobalDefs.swift; sourceTree = "<group>"; };
+		D313746820826971006AC4A6 /* PCH_Defs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PCH_Defs.swift; path = ../../../../Dropbox/MyProjects/PCH_Defs.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +58,9 @@
 			isa = PBXGroup;
 			children = (
 				D3137457208268E5006AC4A6 /* AppDelegate.swift */,
+				D313746720826971006AC4A6 /* GlobalDefs.swift */,
+				D313746820826971006AC4A6 /* PCH_Defs.swift */,
+				D313746520826902006AC4A6 /* SparseMatrix.swift */,
 				D3137459208268E8006AC4A6 /* Assets.xcassets */,
 				D313745B208268E8006AC4A6 /* MainMenu.xib */,
 				D313745E208268E8006AC4A6 /* Info.plist */,
@@ -130,6 +139,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D313746620826902006AC4A6 /* SparseMatrix.swift in Sources */,
+				D313746A20826971006AC4A6 /* PCH_Defs.swift in Sources */,
+				D313746920826971006AC4A6 /* GlobalDefs.swift in Sources */,
 				D3137458208268E5006AC4A6 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
