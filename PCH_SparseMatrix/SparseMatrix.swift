@@ -6,9 +6,11 @@
 //  Copyright © 2018 Peter Huber. All rights reserved.
 //
 
-// This is a wrapper around Apple's sparse matrix routines. The reason for taking this on is that Apple does not offer Complex precision, which we need for a number of programs. Also, the Apple routines for creating a memory structure for Sparse matrices assumes that the entries in the matrix are already known (which makes it kinda useless if you ask me). Our strategy here is one we've used before where we store the numbers in a dictionary where the keys are instances of a special index class and the values are the Complex values (duh). We will use the Complex Matrix Theory that we developed some time ago where any complex number is converted into a 2x2 matrix with the real number repeated on the diagonal, the negative of the imaginary part on the first row and the unmodified impaginary part on the second row.
+// This is a class to make it easier to work with Apple's sparse matrix routines. The reason for taking this on is that Apple does not offer Complex precision, which we need for a number of programs. Also, the Apple routines for creating a memory structure for Sparse matrices assumes that the entries in the matrix are already known. Our strategy here is one we've used before where we store the numbers in a dictionary where the keys are instances of a special index struct and the values are the Complex values (duh). We will use the Complex Matrix Theory that we developed some time ago where any complex number is converted into a 2x2 matrix with the real number repeated on the diagonal, the negative of the imaginary part on the first row and the unmodified impaginary part on the second row.
 
 // Note: All row and column indices are 0-based
+
+// Note: The routines that create Apple-defined matrices and structs should have the data fields deallocated IN THE CALLING ROUTINE after finishing working with them.
 
 import Foundation
 import Accelerate
@@ -330,7 +332,7 @@ class PCH_SparseMatrix:CustomStringConvertible
             i += 2
         }
         
-        // I have assumed that the stride is defined as the number of ROWS of Doubles
+        // For our purposes, the stride is usually defined as the number of ROWS of Doubles 
         let result = DenseMatrix_Double(rowCount: Int32(rowCount * 2), columnCount: 2, columnStride: Int32(columnStride), attributes: SparseAttributes_t(), data: data)
         
         return result

@@ -92,6 +92,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DLog("A:\(A)")
         DLog("Y:\(Y)")
         
+        // Use QR factorization for non-symmetrical matrices
+        let Aqr = SparseFactor(SparseFactorizationQR, Asp)
+        
+        let newXsp = PCH_SparseMatrix.CreateEmptyMatrixForComplexVector(count: 4)
+        
+        // Solve the system and save the answer into the new matrix we created
+        SparseSolve(Aqr, Ysp, newXsp)
+        
+        var newX:[Complex] = []
+        
+        for i in 0..<4
+        {
+            let real = newXsp.data[2 * i]
+            let imag = newXsp.data[2 * i + 1]
+            
+            newX.append(Complex(real: real, imag: imag))
+        }
+        
+        DLog("Solved X: \(newX)")
+        
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
