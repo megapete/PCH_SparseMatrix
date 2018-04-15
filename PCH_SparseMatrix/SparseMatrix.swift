@@ -30,7 +30,7 @@ class PCH_SparseMatrix:CustomStringConvertible
     let rows:Int
     let cols:Int
     
-    /// As simple description function to display matrices with 'print' (the output is quite ugly and not nicely formatted)
+    /// A simple description function to display matrices with 'print' (the output is quite ugly and not nicely formatted)
     var description:String
     {
         var result = ""
@@ -140,9 +140,14 @@ class PCH_SparseMatrix:CustomStringConvertible
             
             if let realResult = self.matrix[realKey]
             {
-                let imagResult = -self.matrix[imagKey]!
-                
-                return Complex(real: realResult, imag: imagResult)
+                if let imagResult = self.matrix[imagKey]
+                {
+                    return Complex(real: realResult, imag: -imagResult)
+                }
+                else
+                {
+                    return Complex(real: realResult)
+                }
             }
             else
             {
@@ -195,7 +200,6 @@ class PCH_SparseMatrix:CustomStringConvertible
         self.cols = cols
     }
     
-    
     func CreateSparseMatrix() -> SparseMatrix_Double
     {
         var typeMultiplier = 1
@@ -204,10 +208,16 @@ class PCH_SparseMatrix:CustomStringConvertible
             typeMultiplier = 2
         }
         
-        var rowIndices:[Int32] = Array(repeating: -1, count: self.matrix.count)
+        // var rowIndices:[Int32] = Array(repeating: -1, count: self.matrix.count)
+        let rowIndices = UnsafeMutablePointer<Int32>.allocate(capacity: self.matrix.count)
+        rowIndices.initialize(repeating: -1, count: self.matrix.count)
+        
         // var values:[Double] = Array(repeating: Double.greatestFiniteMagnitude, count: self.matrix.count)
         let values = UnsafeMutablePointer<Double>.allocate(capacity: self.matrix.count)
-        var columnStarts:[Int] = Array(repeating: -1, count: self.cols * typeMultiplier + 1)
+        
+        // var columnStarts:[Int] = Array(repeating: -1, count: self.cols * typeMultiplier + 1)
+        let columnStarts = UnsafeMutablePointer<Int>.allocate(capacity: self.cols * typeMultiplier + 1)
+        columnStarts.initialize(repeating: -1, count: self.cols * typeMultiplier + 1)
         
         // We assume that the user has done SOME work and that every column has at least one entry in it...
         var lastColumnStart = 0
@@ -251,9 +261,9 @@ class PCH_SparseMatrix:CustomStringConvertible
             }
         }
         
-        for nextColStart in columnStarts
+        for i in 0..<self.cols * typeMultiplier + 1
         {
-            if nextColStart < 0
+            if columnStarts[i] < 0
             {
                 ALog("Illegal value in 'columnStarts'")
             }
@@ -261,12 +271,32 @@ class PCH_SparseMatrix:CustomStringConvertible
         
         #endif
         
-        let sparseStruct = SparseMatrixStructure(rowCount: Int32(self.rows * typeMultiplier), columnCount: Int32(self.cols * typeMultiplier), columnStarts: &columnStarts, rowIndices: &rowIndices, attributes: SparseAttributes_t(), blockSize: 1)
+        let sparseStruct = SparseMatrixStructure(rowCount: Int32(self.rows * typeMultiplier), columnCount: Int32(self.cols * typeMultiplier), columnStarts: columnStarts, rowIndices: rowIndices, attributes: SparseAttributes_t(), blockSize: 1)
         
         return SparseMatrix_Double(structure: sparseStruct, data: values)
     }
     
-    static func CreateDenseVectorForDoubleVector(values:[Double]) -> DenseMatrix_Double
+    static func CreateEmptyMatrixForComplexVector(count:Int) -> DenseMatrix_Double
+    {
+        let ptr = UnsafeMutablePointer<Double>.allocate(capacity: count * 4)
+        ptr.initialize(repeating: 0.0, count: count * 4)
+        
+        let result = DenseMatrix_Double(rowCount: Int32(count * 2), columnCount: 2, columnStride: Int32(count * 2), attributes: SparseAttributes_t(), data: ptr)
+        
+        return result
+    }
+    
+    static func CreateEmptyVectorForDoubleVector(count:Int) -> DenseVector_Double
+    {
+        let ptr = UnsafeMutablePointer<Double>.allocate(capacity: count)
+        ptr.initialize(repeating: 0.0, count: count)
+        
+        let result = DenseVector_Double(count: Int32(count), data: ptr)
+        
+        return result
+    }
+    
+    static func CreateDenseVectorForDoubleVector(values:[Double]) -> DenseVector_Double
     {
         let rowCount = values.count
         let data = UnsafeMutablePointer<Double>.allocate(capacity: rowCount)
@@ -278,7 +308,7 @@ class PCH_SparseMatrix:CustomStringConvertible
             i += 1
         }
         
-        let result = DenseMatrix_Double(rowCount: Int32(rowCount), columnCount: 1, columnStride: Int32(rowCount), attributes: SparseAttributes_t(), data: data)
+        let result = DenseVector_Double(count: Int32(rowCount), data: data)
         
         return result
     }
@@ -287,20 +317,21 @@ class PCH_SparseMatrix:CustomStringConvertible
     {
         let rowCount = values.count
         let data = UnsafeMutablePointer<Double>.allocate(capacity: rowCount * 4)
+        let columnStride = rowCount * 2
         
         var i = 0
         for nextValue in values
         {
             data[i] = nextValue.real
             data[i + 1] = nextValue.imag
-            data[i + rowCount] = -nextValue.imag
-            data[i + 1 + rowCount] = nextValue.real
+            data[i + columnStride] = -nextValue.imag
+            data[i + 1 + columnStride] = nextValue.real
             
-            i += 1
+            i += 2
         }
         
         // I have assumed that the stride is defined as the number of ROWS of Doubles
-        let result = DenseMatrix_Double(rowCount: Int32(rowCount * 2), columnCount: 2, columnStride: Int32(rowCount * 2), attributes: SparseAttributes_t(), data: data)
+        let result = DenseMatrix_Double(rowCount: Int32(rowCount * 2), columnCount: 2, columnStride: Int32(columnStride), attributes: SparseAttributes_t(), data: data)
         
         return result
     }
