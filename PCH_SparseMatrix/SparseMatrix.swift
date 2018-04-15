@@ -337,9 +337,6 @@ class PCH_SparseMatrix:CustomStringConvertible
         
         return result
     }
-    
-    
-    
 }
 
 
