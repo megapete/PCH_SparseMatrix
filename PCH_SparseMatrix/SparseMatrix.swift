@@ -15,6 +15,17 @@ import Accelerate
 
 class PCH_SparseMatrix:CustomStringConvertible
 {
+    // We support two data types of sparse matrices, Double and Complex
+    enum DataType {
+        case double
+        case complex
+    }
+    
+    let type:DataType
+    
+    // routines will return some form of this error in the event of a problem
+    let SPARSE_MATRIX_ERROR = Double.greatestFiniteMagnitude
+    
     // This is the number of rows and cols in the "virtual" Complex matrix (which does not really exist, since we actually store each complex as a 2x2 matrix)
     let rows:Int
     let cols:Int
@@ -68,9 +79,55 @@ class PCH_SparseMatrix:CustomStringConvertible
         }
     }
     
+    // We actually store doubles (even for Complex types) to make life easier
     var matrix:[SparseKey:Double] = [:]
     
-    subscript(row: Int, column: Int) -> Complex {
+    // subscript for Double matrices
+    subscript(row: Int, column: Int) -> Double
+    {
+        get
+        {
+            if row >= self.rows || column >= self.cols
+            {
+                ALog("Illegal index")
+                return SPARSE_MATRIX_ERROR
+            }
+            
+            let key = SparseKey(row: row, col: column)
+            
+            if let result = self.matrix[key]
+            {
+                return result
+            }
+            else
+            {
+                return 0.0
+            }
+        }
+        set
+        {
+            if row >= self.rows || column >= self.cols
+            {
+                ALog("Illegal index")
+            }
+            
+            let key = SparseKey(row: row, col: column)
+            
+            if newValue == 0.0
+            {
+                self.matrix.removeValue(forKey: key)
+            }
+            else
+            {
+                self.matrix[key] = newValue
+            }
+            
+        }
+    }
+    
+    // subscript for Complex matrices
+    subscript(row: Int, column: Int) -> Complex
+    {
         get
         {
             if row >= self.rows || column >= self.cols
@@ -78,7 +135,6 @@ class PCH_SparseMatrix:CustomStringConvertible
                 ALog("Illegal index")
                 return Complex.ComplexNan
             }
-            
             let realKey = SparseKey(row: row * 2, col: column * 2)
             let imagKey = SparseKey(row: row * 2, col: column * 2 + 1)
             
@@ -95,7 +151,7 @@ class PCH_SparseMatrix:CustomStringConvertible
         }
         set
         {
-            if row * 2 >= self.rows || column * 2 >= self.cols
+            if row >= self.rows || column >= self.cols
             {
                 ALog("Illegal index")
             }
@@ -118,7 +174,6 @@ class PCH_SparseMatrix:CustomStringConvertible
             
             if newValue.imag == 0.0
             {
-                
                 self.matrix.removeValue(forKey: imagKey1)
                 self.matrix.removeValue(forKey: imagKey2)
             }
@@ -130,33 +185,47 @@ class PCH_SparseMatrix:CustomStringConvertible
         }
     }
     
-    init(rows:Int, cols:Int)
+    
+    // Designated initializer
+    // Call with the number of Complex rows and columns (ie: don't multiply them by 2)
+    init(type:DataType, rows:Int, cols:Int)
     {
+        self.type = type
         self.rows = rows
         self.cols = cols
     }
     
+    
     func CreateSparseMatrix() -> SparseMatrix_Double
     {
-        var rowIndices:[Int32] = Array(repeating: -1, count: self.matrix.count * 2)
-        var values:[Double] = Array(repeating: Double.greatestFiniteMagnitude, count: self.matrix.count * 2)
-        var columnStarts:[Int] = Array(repeating: -1, count: self.cols * 2 + 1)
+        var typeMultiplier = 1
+        if self.type == .complex
+        {
+            typeMultiplier = 2
+        }
+        
+        var rowIndices:[Int32] = Array(repeating: -1, count: self.matrix.count)
+        // var values:[Double] = Array(repeating: Double.greatestFiniteMagnitude, count: self.matrix.count)
+        let values = UnsafeMutablePointer<Double>.allocate(capacity: self.matrix.count)
+        var columnStarts:[Int] = Array(repeating: -1, count: self.cols * typeMultiplier + 1)
         
         // We assume that the user has done SOME work and that every column has at least one entry in it...
         var lastColumnStart = 0
         columnStarts[0] = lastColumnStart
         
-        for column in 0..<self.cols
+        var rowIndex = 0
+        for column in 0..<self.cols * typeMultiplier
         {
             var numRowValues:Int32 = 0
-            for row in 0..<self.rows
+            for row in 0..<self.rows * typeMultiplier
             {
                 if let value = self.matrix[SparseKey(row: row, col: column)]
                 {
                     if value != 0.0
                     {
-                        rowIndices.append(Int32(row))
-                        values.append(value)
+                        rowIndices[rowIndex] = Int32(row)
+                        values[rowIndex] = value
+                        rowIndex += 1
                         numRowValues += 1
                     }
                 }
@@ -166,9 +235,52 @@ class PCH_SparseMatrix:CustomStringConvertible
             columnStarts[column + 1] = lastColumnStart
         }
         
-        let sparseStruct = SparseMatrixStructure(rowCount: Int32(self.rows * 2), columnCount: Int32(self.cols * 2), columnStarts: &columnStarts, rowIndices: &rowIndices, attributes: SparseAttributes_t(), blockSize: 1)
+        // Do some slow checking in DEBUG builds only
+        #if DEBUG
         
-        return SparseMatrix_Double(structure: sparseStruct, data: &values)
+        for i in 0..<self.matrix.count
+        {
+            if rowIndices[i] < 0
+            {
+                ALog("Illegal value in 'rowIndices'")
+            }
+            
+            if values[i] == Double.greatestFiniteMagnitude
+            {
+                ALog("Illegal value in 'values'")
+            }
+        }
+        
+        for nextColStart in columnStarts
+        {
+            if nextColStart < 0
+            {
+                ALog("Illegal value in 'columnStarts'")
+            }
+        }
+        
+        #endif
+        
+        let sparseStruct = SparseMatrixStructure(rowCount: Int32(self.rows * typeMultiplier), columnCount: Int32(self.cols * typeMultiplier), columnStarts: &columnStarts, rowIndices: &rowIndices, attributes: SparseAttributes_t(), blockSize: 1)
+        
+        return SparseMatrix_Double(structure: sparseStruct, data: values)
+    }
+    
+    static func CreateDenseVectorForDoubleVector(values:[Double]) -> DenseMatrix_Double
+    {
+        let rowCount = values.count
+        let data = UnsafeMutablePointer<Double>.allocate(capacity: rowCount)
+        
+        var i = 0
+        for nextValue in values
+        {
+            data[i] = nextValue
+            i += 1
+        }
+        
+        let result = DenseMatrix_Double(rowCount: Int32(rowCount), columnCount: 1, columnStride: Int32(rowCount), attributes: SparseAttributes_t(), data: data)
+        
+        return result
     }
     
     static func CreateDenseMatrixForComplexVector(values:[Complex]) -> DenseMatrix_Double
@@ -187,16 +299,13 @@ class PCH_SparseMatrix:CustomStringConvertible
             i += 1
         }
         
-        let result = DenseMatrix_Double(rowCount: Int32(rowCount * 2), columnCount: 2, columnStride: 1, attributes: SparseAttributes_t(), data: data)
+        // I have assumed that the stride is defined as the number of ROWS of Doubles
+        let result = DenseMatrix_Double(rowCount: Int32(rowCount * 2), columnCount: 2, columnStride: Int32(rowCount * 2), attributes: SparseAttributes_t(), data: data)
         
         return result
     }
     
-    // See the Apple documentation under Sparse to see how to create a DenseMatrix
-    func SolveWithB(_ B:DenseMatrix_Double) -> DenseMatrix_Double
-    {
-        
-    }
+    
     
 }
 
