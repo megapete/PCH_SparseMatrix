@@ -105,6 +105,12 @@ class PCH_SparseMatrix:CustomStringConvertible
     {
         get
         {
+            if self.type != .double
+            {
+                ALog("Illegal matrix type for value (should be Double")
+                return SPARSE_MATRIX_ERROR
+            }
+            
             if row >= self.rows || column >= self.cols
             {
                 ALog("Illegal index")
@@ -124,6 +130,13 @@ class PCH_SparseMatrix:CustomStringConvertible
         }
         set
         {
+            var theValue = newValue
+            if self.type != .double
+            {
+                ALog("Illegal matrix type for value (should be Double")
+                theValue = SPARSE_MATRIX_ERROR
+            }
+            
             if row >= self.rows || column >= self.cols
             {
                 ALog("Illegal index")
@@ -131,13 +144,13 @@ class PCH_SparseMatrix:CustomStringConvertible
             
             let key = SparseKey(row: row, col: column)
             
-            if fabs(newValue) < 1.0E-14
+            if fabs(theValue) < 1.0E-14
             {
                 self.matrix.removeValue(forKey: key)
             }
             else
             {
-                self.matrix[key] = newValue
+                self.matrix[key] = theValue
             }
             
         }
@@ -148,11 +161,18 @@ class PCH_SparseMatrix:CustomStringConvertible
     {
         get
         {
+            if self.type != .complex
+            {
+                ALog("Illegal matrix type for value (should be Complex")
+                return Complex.ComplexNan
+            }
+            
             if row >= self.rows || column >= self.cols
             {
                 ALog("Illegal index")
                 return Complex.ComplexNan
             }
+            
             let realKey = SparseKey(row: row * 2, col: column * 2)
             let imagKey = SparseKey(row: row * 2, col: column * 2 + 1)
             
@@ -178,6 +198,13 @@ class PCH_SparseMatrix:CustomStringConvertible
         }
         set
         {
+            var theValue = newValue
+            if self.type != .complex
+            {
+                ALog("Illegal matrix type for value (should be Double")
+                theValue = Complex.ComplexNan
+            }
+            
             if row >= self.rows || column >= self.cols
             {
                 ALog("Illegal index")
@@ -188,7 +215,7 @@ class PCH_SparseMatrix:CustomStringConvertible
             let imagKey1 = SparseKey(row: row * 2, col: column * 2 + 1) // negative imaginary term
             let imagKey2 = SparseKey(row: row * 2 + 1, col: column * 2)
             
-            if fabs(newValue.real) < 1.0E-12
+            if fabs(theValue.real) < 1.0E-12
             {
                 self.matrix.removeValue(forKey: realKey1)
                 self.matrix.removeValue(forKey: realKey2)
@@ -199,7 +226,7 @@ class PCH_SparseMatrix:CustomStringConvertible
                 self.matrix[realKey2] = newValue.real
             }
             
-            if fabs(newValue.imag) < 1.0E-12
+            if fabs(theValue.imag) < 1.0E-12
             {
                 self.matrix.removeValue(forKey: imagKey1)
                 self.matrix.removeValue(forKey: imagKey2)
