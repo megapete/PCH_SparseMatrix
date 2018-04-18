@@ -115,7 +115,7 @@ class PCH_SparseMatrix:CustomStringConvertible
             
             let key = SparseKey(row: row, col: column)
             
-            if newValue == 0.0
+            if fabs(newValue) < 1.0E-14
             {
                 self.matrix.removeValue(forKey: key)
             }
@@ -151,6 +151,10 @@ class PCH_SparseMatrix:CustomStringConvertible
                     return Complex(real: realResult)
                 }
             }
+            else if let imagResult = self.matrix[imagKey]
+            {
+                return Complex(real: 0.0, imag: -imagResult)
+            }
             else
             {
                 return Complex(real:0.0)
@@ -168,7 +172,7 @@ class PCH_SparseMatrix:CustomStringConvertible
             let imagKey1 = SparseKey(row: row * 2, col: column * 2 + 1) // negative imaginary term
             let imagKey2 = SparseKey(row: row * 2 + 1, col: column * 2)
             
-            if newValue.real == 0.0
+            if fabs(newValue.real) < 1.0E-12
             {
                 self.matrix.removeValue(forKey: realKey1)
                 self.matrix.removeValue(forKey: realKey2)
@@ -179,7 +183,7 @@ class PCH_SparseMatrix:CustomStringConvertible
                 self.matrix[realKey2] = newValue.real
             }
             
-            if newValue.imag == 0.0
+            if fabs(newValue.imag) < 1.0E-12
             {
                 self.matrix.removeValue(forKey: imagKey1)
                 self.matrix.removeValue(forKey: imagKey2)
@@ -216,6 +220,7 @@ class PCH_SparseMatrix:CustomStringConvertible
         
         // var values:[Double] = Array(repeating: Double.greatestFiniteMagnitude, count: self.matrix.count)
         let values = UnsafeMutablePointer<Double>.allocate(capacity: self.matrix.count)
+        values.initialize(repeating:0.0, count: self.matrix.count)
         
         // var columnStarts:[Int] = Array(repeating: -1, count: self.cols * typeMultiplier + 1)
         let columnStarts = UnsafeMutablePointer<Int>.allocate(capacity: self.cols * typeMultiplier + 1)
@@ -284,7 +289,9 @@ class PCH_SparseMatrix:CustomStringConvertible
         
         let sparseStruct = SparseMatrixStructure(rowCount: Int32(self.rows * typeMultiplier), columnCount: Int32(self.cols * typeMultiplier), columnStarts: columnStarts, rowIndices: rowIndices, attributes: SparseAttributes_t(), blockSize: 1)
         
-        return SparseMatrix_Double(structure: sparseStruct, data: values)
+        let result = SparseMatrix_Double(structure: sparseStruct, data: values)
+        
+        return result
     }
     
     static func CreateEmptyMatrixForComplexVector(count:Int) -> DenseMatrix_Double

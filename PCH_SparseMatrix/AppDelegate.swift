@@ -19,27 +19,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     {
         // Insert code here to initialize your application
         
+        TestComplexMatrixOfDimension(dim: 4)
+        
         let A = PCH_SparseMatrix(type: .complex, rows: 4, cols: 4)
         
         A[0,0] = Complex(real: 5.0, imag: 2.0)
-        A[1,0] = Complex(real: 0.0, imag: 0.0)
+        // A[1,0] = Complex(real: 0.0, imag: 0.0)
         A[2,0] = Complex(real: 4.0, imag: 9.0)
         A[3,0] = Complex(real: 3.2, imag: 1.0)
         
         A[0,1] = Complex(real: 3.0, imag: 1.0)
         A[1,1] = Complex(real: -2.0, imag: -2.0)
         A[2,1] = Complex(real: 9.0, imag: -4.5)
-        A[3,1] = Complex(real: 0.0)
+        // A[3,1] = Complex(real: 0.0)
         
         A[0,2] = Complex(real: 2.0, imag: -3.0)
         A[1,2] = Complex(real: 1.0, imag: 1.5)
-        A[2,2] = Complex(real: 0.0)
+        // A[2,2] = Complex(real: 0.0)
         A[3,2] = Complex(real: 2.3)
         
-        A[0,3] = Complex(real: 0.0)
-        A[1,3] = Complex(real: 0.0)
+        // A[0,3] = Complex(real: 0.0)
+        // A[1,3] = Complex(real: 0.0)
         A[2,3] = Complex(real: 6.0, imag: 2.3)
-        A[3,3] = Complex(real: 0.0)
+        // A[3,3] = Complex(real: 0.0)
         
         let Asp = A.CreateSparseMatrix()
         let numRowIndices = Asp.structure.columnStarts[8]
@@ -112,6 +114,86 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         DLog("Solved X: \(newX)")
         
+    }
+    
+    func TestDoubleMatrixOfDimension(dim:Int)
+    {
+        let A = PCH_SparseMatrix(type: .double, rows: dim, cols: dim)
+        
+        for i in 0..<dim
+        {
+            for j in 0..<dim
+            {
+                let base = drand48()
+                
+                if i == j
+                {
+                    if base > 0.15
+                    {
+                        A[i,j] = base
+                    }
+                }
+                else
+                {
+                    if base < 0.01
+                    {
+                        A[i,j] = base
+                    }
+                }
+            }
+        }
+        
+        let Asp = A.CreateSparseMatrix()
+        
+        let Aqr = SparseFactor(SparseFactorizationQR, Asp)
+        
+        DLog("Factorization completed with \(A.matrix.count) non-zero entries of a possible \(A.cols * A.rows)")
+    }
+    
+    func TestComplexMatrixOfDimension(dim:Int)
+    {
+        let A = PCH_SparseMatrix(type: .complex, rows: dim, cols: dim)
+        
+        for i in 0..<dim
+        {
+            for j in 0..<dim
+            {
+                let base = drand48()
+                
+                if i == j
+                {
+                    if base > 0.15
+                    {
+                        var imag = drand48()
+                        if imag < 0.9
+                        {
+                            imag = 0.0
+                        }
+                        A[i,j] = Complex(real: base, imag: imag)
+                    }
+                }
+                else
+                {
+                    if base < 0.01
+                    {
+                        var imag = drand48()
+                        if imag > 0.1
+                        {
+                            imag = 0.0
+                        }
+                        A[i,j] = Complex(real: base, imag: imag)
+                    }
+                }
+            }
+        }
+        
+        DLog("A: \(A)")
+        
+        let Asp = A.CreateSparseMatrix()
+        
+        let Aqr = SparseFactor(SparseFactorizationQR, Asp)
+        
+        DLog("Factorization completed with \(A.matrix.count) non-zero entries of a possible \(A.cols * A.rows * 4)")
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
