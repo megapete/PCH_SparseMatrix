@@ -45,13 +45,29 @@ class PCH_SparseMatrix:CustomStringConvertible
             {
                 if (j == self.cols - 1)
                 {
-                    let value:Complex = self[i,j]
-                    result += "\(value) |"
+                    if self.type == .complex
+                    {
+                        let value:Complex = self[i,j]
+                        result += "\(value) |"
+                    }
+                    else
+                    {
+                        let value:Double = self[i,j]
+                        result += "\(value) |"
+                    }
                 }
                 else
                 {
-                    let value:Complex = self[i,j]
-                    result += "\(value)   "
+                    if self.type == .complex
+                    {
+                        let value:Complex = self[i,j]
+                        result += "\(value)   "
+                    }
+                    else
+                    {
+                        let value:Double = self[i,j]
+                        result += "\(value)   "
+                    }
                 }
             }
         }
@@ -214,6 +230,23 @@ class PCH_SparseMatrix:CustomStringConvertible
             typeMultiplier = 2
         }
         
+        // Debug (slow) checking
+        #if DEBUG
+        
+            var columnCheck:[Bool] = Array(repeating: false, count: self.cols * typeMultiplier)
+        
+            for (key, _) in self.matrix
+            {
+                columnCheck[key.col] = true
+            }
+        
+            if columnCheck.contains(false)
+            {
+                ALog("Illegal blank column in matrix!")
+            }
+        
+        #endif
+        
         // var rowIndices:[Int32] = Array(repeating: -1, count: self.matrix.count)
         let rowIndices = UnsafeMutablePointer<Int32>.allocate(capacity: self.matrix.count)
         rowIndices.initialize(repeating: -1, count: self.matrix.count)
@@ -259,31 +292,29 @@ class PCH_SparseMatrix:CustomStringConvertible
             columnStarts[i + 1] = columnStarts[i] + valuesPerColumn[i]
         }
         
-        
-        
         // Do some slow checking in DEBUG builds only
         #if DEBUG
         
-        for i in 0..<self.matrix.count
-        {
-            if rowIndices[i] < 0
+            for i in 0..<self.matrix.count
             {
-                ALog("Illegal value in 'rowIndices'")
+                if rowIndices[i] < 0
+                {
+                    ALog("Illegal value in 'rowIndices'")
+                }
+                
+                if values[i] == Double.greatestFiniteMagnitude
+                {
+                    ALog("Illegal value in 'values'")
+                }
             }
-            
-            if values[i] == Double.greatestFiniteMagnitude
-            {
-                ALog("Illegal value in 'values'")
-            }
-        }
         
-        for i in 1...self.cols * typeMultiplier
-        {
-            if columnStarts[i] == 0
+            for i in 1...self.cols * typeMultiplier
             {
-                ALog("Illegal value in 'columnStarts'")
+                if columnStarts[i] == 0
+                {
+                    ALog("Illegal value in 'columnStarts'")
+                }
             }
-        }
         
         #endif
         

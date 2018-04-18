@@ -19,6 +19,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     {
         // Insert code here to initialize your application
         
+        TestDoubleMatrixOfDimension(dim: 10)
+        
         TestComplexMatrixOfDimension(dim: 4)
         
         let A = PCH_SparseMatrix(type: .complex, rows: 4, cols: 4)
@@ -142,6 +144,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        
+        DLog("A: \(A)")
         
         let Asp = A.CreateSparseMatrix()
         
