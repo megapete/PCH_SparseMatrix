@@ -10,7 +10,9 @@
 
 // Note: All row and column indices are 0-based
 
-// Note: The routines that create Apple-defined matrices and structs should have the data fields deallocated IN THE CALLING ROUTINE after finishing working with them.
+// Note: The routines that create Apple-defined matrices and structs should have the data fields deallocated IN THE CALLING ROUTINE after finishing working with them by calling the static CleanUp... routines in this class.
+
+// Note: There is a generic "Solve" routine (for now, double matrices with double vectors only) which does all the work of cleaning up after using it.
 
 import Foundation
 import Accelerate
@@ -352,6 +354,50 @@ class PCH_SparseMatrix:CustomStringConvertible
         return result
     }
     
+    /// Solve the matrix AX=B where A is self and B is a vector (array) of doubles. The vector X is returned as an array of doubles. The routine defaults to a QR factorization.
+    func SolveWithVector(Bv:[Double]) -> [Double]
+    {
+        if self.type != .double
+        {
+            DLog("Cannot solve system with both Complex and Double matrices!")
+            return []
+        }
+        
+        if Bv.count == 0
+        {
+            DLog("The B vector has no members!")
+            return []
+        }
+        
+        guard self.cols == self.rows && self.rows == Bv.count else
+        {
+            DLog("Illegal dimensions!")
+            return []
+        }
+        
+        let Asp = self.CreateSparseMatrix()
+        
+        let A = SparseFactor(SparseFactorizationQR, Asp)
+        let B = PCH_SparseMatrix.CreateDenseVectorForDoubleVector(values: Bv)
+        let X = PCH_SparseMatrix.CreateEmptyVectorForDoubleVector(count: Bv.count)
+        
+        SparseSolve(A, B, X)
+        
+        var result:[Double] = []
+        for i in 0..<Bv.count
+        {
+            result.append(X.data[i])
+        }
+        
+        // Clean up the memory allocated
+        PCH_SparseMatrix.CleanUpSparseMatrix(matrix: Asp)
+        PCH_SparseMatrix.CleanUpVector(vector: B)
+        PCH_SparseMatrix.CleanUpVector(vector: X)
+        PCH_SparseMatrix.CleanUpFactorization(factor: A)
+        
+        return result
+    }
+    
     static func CreateEmptyMatrixForComplexVector(count:Int) -> DenseMatrix_Double
     {
         let ptr = UnsafeMutablePointer<Double>.allocate(capacity: count * 4)
@@ -411,6 +457,33 @@ class PCH_SparseMatrix:CustomStringConvertible
         
         return result
     }
+    
+    /// Deallocate the memory structures associated with a sparse matrix
+    static func CleanUpSparseMatrix(matrix:SparseMatrix_Double)
+    {
+        matrix.data.deallocate()
+        matrix.structure.columnStarts.deallocate()
+        matrix.structure.rowIndices.deallocate()
+    }
+    
+    /// Deallocate the memory structures associated with a dense matrix
+    static func CleanUpDenseMatrix(matrix:DenseMatrix_Double)
+    {
+        matrix.data.deallocate()
+    }
+    
+    /// Deallocate the memory associated with a vector
+    static func CleanUpVector(vector:DenseVector_Double)
+    {
+        vector.data.deallocate()
+    }
+    
+    /// Deallocate the memory associated with a factorization
+    static func CleanUpFactorization(factor:SparseOpaqueFactorization_Double)
+    {
+        SparseCleanup(factor)
+    }
+    
 }
 
 
