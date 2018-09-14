@@ -251,6 +251,18 @@ class PCH_SparseMatrix:CustomStringConvertible
         self.cols = cols
     }
     
+    /// Clear the matrix of all entries
+    func ClearEntries()
+    {
+        self.matrix.removeAll()
+    }
+    
+    /// Return the number of entries in the matrix
+    func NumEntries() -> Int
+    {
+        return self.matrix.count
+    }
+    
     func CreateSparseMatrix() -> SparseMatrix_Double
     {
         var typeMultiplier = 1
