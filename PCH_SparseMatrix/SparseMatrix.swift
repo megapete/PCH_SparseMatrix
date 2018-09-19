@@ -470,6 +470,54 @@ class PCH_SparseMatrix:CustomStringConvertible
         return result
     }
     
+    /// Output the matrix as a CSV file
+    func OutputAsCSV(url:URL)
+    {
+        var result = ""
+        
+        for i in 0..<self.rows
+        {
+            for j in 0..<self.cols
+            {
+                if (j == self.cols - 1)
+                {
+                    if self.type == .complex
+                    {
+                        let value:Complex = self[i,j]
+                        result += "\(value)\n"
+                    }
+                    else
+                    {
+                        let value:Double = self[i,j]
+                        result += "\(value)\n"
+                    }
+                }
+                else
+                {
+                    if self.type == .complex
+                    {
+                        let value:Complex = self[i,j]
+                        result += "\(value),"
+                    }
+                    else
+                    {
+                        let value:Double = self[i,j]
+                        result += "\(value),"
+                    }
+                }
+            }
+        }
+        
+        do
+        {
+            try result.write(to: url, atomically: true, encoding: .utf16)
+        
+        } catch {
+            
+            DLog("Write error: \(error.localizedDescription)")
+        }
+    }
+    
     /// Deallocate the memory structures associated with a sparse matrix
     static func CleanUpSparseMatrix(matrix:SparseMatrix_Double)
     {
