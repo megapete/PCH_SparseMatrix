@@ -146,6 +146,11 @@ class PCH_SparseMatrix:CustomStringConvertible
             
             let key = SparseKey(row: row, col: column)
             
+            if let _ = self.matrix[key]
+            {
+                DLog("Overwriting existing value!")
+            }
+            
             if fabs(theValue) < 1.0E-14
             {
                 self.matrix.removeValue(forKey: key)
